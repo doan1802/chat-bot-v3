@@ -45,6 +45,7 @@ export function UserProfileDropdown({ user }: UserProfileDropdownProps) {
   const [apiKeys, setApiKeys] = useState({
     gemini_api_key: "",
     vapi_api_key: "",
+    vapi_web_token: "",
     raper_url: ""
   })
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
@@ -76,6 +77,7 @@ export function UserProfileDropdown({ user }: UserProfileDropdownProps) {
             setApiKeys({
               gemini_api_key: settings.gemini_api_key || "",
               vapi_api_key: settings.vapi_api_key || "",
+              vapi_web_token: settings.vapi_web_token || "",
               raper_url: settings.raper_url || ""
             })
           }
@@ -466,6 +468,23 @@ export function UserProfileDropdown({ user }: UserProfileDropdownProps) {
                   "focus:border-white/20 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                 )}
                 placeholder="Enter your Vapi API key"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="vapi_web_token" className="text-white">Vapi Web Token</Label>
+              <Input
+                id="vapi_web_token"
+                name="vapi_web_token"
+                type="password"
+                value={apiKeys.vapi_web_token}
+                onChange={handleApiKeyChange}
+                className={cn(
+                  "bg-zinc-800/50 border-white/10",
+                  "text-white placeholder:text-zinc-500",
+                  "focus:border-white/20 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                )}
+                placeholder="Enter your Vapi Web Token"
               />
             </div>
 

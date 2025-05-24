@@ -54,7 +54,7 @@ const getUserSettings = async (req, res) => {
 const updateUserSettings = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { theme, language, gemini_api_key, vapi_api_key, raper_url } = req.body;
+    const { theme, language, gemini_api_key, vapi_api_key, vapi_web_token, raper_url } = req.body;
 
     // Cập nhật thông tin settings
     const updateData = {};
@@ -63,6 +63,7 @@ const updateUserSettings = async (req, res) => {
     if (language !== undefined) updateData.language = language;
     if (gemini_api_key !== undefined) updateData.gemini_api_key = gemini_api_key;
     if (vapi_api_key !== undefined) updateData.vapi_api_key = vapi_api_key;
+    if (vapi_web_token !== undefined) updateData.vapi_web_token = vapi_web_token;
     if (raper_url !== undefined) updateData.raper_url = raper_url;
 
     // Thêm trường updated_at

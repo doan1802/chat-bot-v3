@@ -351,6 +351,7 @@ export const settingsAPI = {
     language?: string;
     gemini_api_key?: string;
     vapi_api_key?: string;
+    vapi_web_token?: string;
     raper_url?: string;
   }) => {
     const token = getAuthToken();

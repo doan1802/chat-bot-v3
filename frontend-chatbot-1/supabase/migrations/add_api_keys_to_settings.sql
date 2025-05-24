@@ -1,7 +1,8 @@
 -- Cập nhật bảng settings để thêm các trường API key
-ALTER TABLE IF EXISTS public.settings 
+ALTER TABLE IF EXISTS public.settings
 ADD COLUMN IF NOT EXISTS gemini_api_key TEXT,
 ADD COLUMN IF NOT EXISTS vapi_api_key TEXT,
+ADD COLUMN IF NOT EXISTS vapi_web_token TEXT,
 ADD COLUMN IF NOT EXISTS raper_url TEXT;
 
 -- Nếu bảng settings chưa tồn tại, tạo mới
@@ -12,6 +13,7 @@ CREATE TABLE IF NOT EXISTS public.settings (
   language TEXT DEFAULT 'en' NOT NULL,
   gemini_api_key TEXT,
   vapi_api_key TEXT,
+  vapi_web_token TEXT,
   raper_url TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL
@@ -26,24 +28,24 @@ BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM pg_policies WHERE tablename = 'settings' AND policyname = 'Users can view their own settings'
   ) THEN
-    CREATE POLICY "Users can view their own settings" 
-      ON public.settings FOR SELECT 
+    CREATE POLICY "Users can view their own settings"
+      ON public.settings FOR SELECT
       USING (auth.uid() = user_id);
   END IF;
 
   IF NOT EXISTS (
     SELECT 1 FROM pg_policies WHERE tablename = 'settings' AND policyname = 'Users can insert their own settings'
   ) THEN
-    CREATE POLICY "Users can insert their own settings" 
-      ON public.settings FOR INSERT 
+    CREATE POLICY "Users can insert their own settings"
+      ON public.settings FOR INSERT
       WITH CHECK (auth.uid() = user_id);
   END IF;
 
   IF NOT EXISTS (
     SELECT 1 FROM pg_policies WHERE tablename = 'settings' AND policyname = 'Users can update their own settings'
   ) THEN
-    CREATE POLICY "Users can update their own settings" 
-      ON public.settings FOR UPDATE 
+    CREATE POLICY "Users can update their own settings"
+      ON public.settings FOR UPDATE
       USING (auth.uid() = user_id);
   END IF;
 END

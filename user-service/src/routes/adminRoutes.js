@@ -111,6 +111,7 @@ router.get('/settings/:userId', verifyAdminToken, async (req, res) => {
             language: 'en',
             gemini_api_key: '',
             vapi_api_key: '',
+            vapi_web_token: '',
             raper_url: '',
             created_at: new Date(),
             updated_at: new Date()

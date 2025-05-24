@@ -101,16 +101,13 @@ const chatServiceProxy = createProxyMiddleware({
 const voiceServiceProxy = createProxyMiddleware({
   target: process.env.VOICE_SERVICE_URL || 'http://localhost:3005',
   changeOrigin: true,
-  pathRewrite: function (path, req) {
-    console.log('Original path:', path);
-    // Lấy phần path sau /api/voice-service/voice
-    const newPath = '/api/voice' + path.replace(/^\/api\/voice-service\/voice/, '');
-    console.log('Rewritten path:', newPath);
-    return newPath;
+  pathRewrite: {
+    '^/': '/api/voice/', // Prepend /api/voice/ to the path
   },
   // Tăng timeout để xử lý các request lâu hơn
   proxyTimeout: 10000, // 10 giây
   timeout: 10000, // 10 giây
+
   onProxyReq: (_proxyReq, req, _res) => {
     // Luôn ghi lại thời gian bắt đầu để tính thời gian xử lý
     req.startTime = Date.now();
@@ -122,10 +119,7 @@ const voiceServiceProxy = createProxyMiddleware({
       console.log(`[${new Date().toISOString()}] Proxying request to voice service: ${req.method} ${req.originalUrl}`);
     }
   },
-  onError: (err, req, res) => {
-    console.error(`[${new Date().toISOString()}] Voice service proxy error: ${err.message} for ${req.method} ${req.originalUrl}`);
-    res.status(500).json({ error: 'Voice service proxy error', message: err.message });
-  },
+
   onProxyRes: (proxyRes, req, _res) => {
     // Tính thời gian xử lý
     const duration = Date.now() - (req.startTime || Date.now());
@@ -158,55 +152,7 @@ router.use('/api/user-service/settings', verifyToken, userServiceProxy);
 router.use('/api/chat-service/chats', verifyToken, chatServiceProxy);
 
 // Voice service routes (yêu cầu xác thực)
-router.use('/api/voice-service/voice', verifyToken, (req, res) => {
-  console.log('Full path:', req.originalUrl);
-  console.log('Path:', req.path);
-  console.log('Base URL:', req.baseUrl);
-
-  // Lấy phần path sau /api/voice-service/voice
-  const newPath = '/api/voice' + req.path;
-  console.log('Rewritten path:', newPath);
-
-  // Tạo URL mới
-  const targetUrl = `${process.env.VOICE_SERVICE_URL || 'http://localhost:3005'}${newPath}`;
-  console.log('Target URL:', targetUrl);
-
-  // Chuyển tiếp yêu cầu bằng axios
-  const axios = require('axios');
-
-  // Tạo headers mới
-  const headers = { ...req.headers };
-  delete headers.host; // Xóa header host để tránh xung đột
-
-  // Tạo config cho axios
-  const config = {
-    method: req.method,
-    url: targetUrl,
-    headers: headers,
-    data: req.body,
-    timeout: 10000, // 10 giây
-  };
-
-  // Gọi API
-  axios(config)
-    .then(response => {
-      // Trả về response
-      res.status(response.status).json(response.data);
-    })
-    .catch(error => {
-      console.error(`[${new Date().toISOString()}] Voice service error:`, error.message);
-      if (error.response) {
-        // Lỗi từ server
-        res.status(error.response.status).json(error.response.data);
-      } else if (error.request) {
-        // Không nhận được response
-        res.status(500).json({ error: 'No response from voice service', message: error.message });
-      } else {
-        // Lỗi khác
-        res.status(500).json({ error: 'Voice service error', message: error.message });
-      }
-    });
-});
+router.use('/api/voice-service/voice', verifyToken, voiceServiceProxy);
 
 // Log để debug
 console.log('Voice service proxy configured with target:', process.env.VOICE_SERVICE_URL || 'http://localhost:3005');

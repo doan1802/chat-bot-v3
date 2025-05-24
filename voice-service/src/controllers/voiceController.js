@@ -17,14 +17,28 @@ const getVapiConfig = async (req, res) => {
     // Lấy thông tin cài đặt của người dùng từ user-service
     const userSettings = await getUserSettings(userId, req.headers.authorization);
 
-    // Kiểm tra xem người dùng có cài đặt VAPI API key không
-    const vapiApiKey = userSettings?.vapi_api_key || process.env.VAPI_API_KEY;
+    // Ưu tiên sử dụng VAPI API key của người dùng, nếu không có thì dùng key mặc định
+    let vapiApiKey = null;
+    let keySource = '';
+
+    if (userSettings?.vapi_api_key) {
+      vapiApiKey = userSettings.vapi_api_key;
+      keySource = 'user settings';
+    } else if (process.env.VAPI_API_KEY) {
+      vapiApiKey = process.env.VAPI_API_KEY;
+      keySource = 'environment variable';
+    }
 
     if (!vapiApiKey) {
       return res.status(400).json({
         error: 'VAPI API key not configured',
-        message: 'Please configure your VAPI API key in settings'
+        message: 'Please configure your VAPI API key in settings or contact administrator'
       });
+    }
+
+    // Log thông tin sử dụng key (chỉ trong môi trường phát triển)
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[Client: ${clientInstance}] Using VAPI API key from: ${keySource}`);
     }
 
     // Trả về cấu hình VAPI
@@ -56,53 +70,88 @@ const getVapiWebToken = async (req, res) => {
     // Lấy thông tin cài đặt của người dùng từ user-service
     const userSettings = await getUserSettings(userId, req.headers.authorization);
 
-    // Sử dụng token từ cài đặt người dùng hoặc từ biến môi trường
-    const vapiWebToken = userSettings?.vapi_web_token || process.env.VAPI_WEB_TOKEN;
+    // Ưu tiên sử dụng VAPI Web Token của người dùng, nếu không có thì dùng token mặc định
+    let vapiWebToken = null;
+    let tokenSource = '';
+
+    if (userSettings?.vapi_web_token) {
+      vapiWebToken = userSettings.vapi_web_token;
+      tokenSource = 'user settings';
+    } else if (process.env.VAPI_WEB_TOKEN) {
+      vapiWebToken = process.env.VAPI_WEB_TOKEN;
+      tokenSource = 'environment variable';
+    }
 
     if (!vapiWebToken) {
       return res.status(400).json({
         error: 'VAPI Web Token not configured',
-        message: 'Please configure your VAPI Web Token in settings'
+        message: 'Please configure your VAPI Web Token in settings or contact administrator'
       });
     }
 
-    // Định nghĩa assistant
+    // Log thông tin sử dụng token (chỉ trong môi trường phát triển)
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[Client: ${clientInstance}] Using VAPI Web Token from: ${tokenSource}`);
+    }
+
+    // Cấu hình đơn giản theo tài liệu VAPI chính thức
     const assistant = {
-      name: "Trợ lý Serna",
-      firstMessage: "Xin chào! Tôi là trợ lý Serna. Tôi có thể giúp gì cho bạn?",
+      name: "Serna",
+      firstMessage: "Chào bạn! Tôi là Serna. Hôm nay tôi có thể giúp gì cho bạn?",
+
       transcriber: {
-        provider: "google",
-        model: "gemini-2.0-flash",
-        language: "Multilingual", // Tiếng Việt
+        provider: "deepgram",
+        model: "nova-2",
+        language: "vi"
       },
+
       voice: {
-        provider: "vapi",
-        voiceId: "Cole", // ID giọng nói
-        // stability: 0.4,
-        // similarityBoost: 0.8,
-        // speed: 0.9,
-        // style: 0.5,
-        // useSpeakerBoost: true,
+        provider: "azure",
+        voiceId: "vi-VN-NamMinhNeural",
+        speed: 1.1
       },
+
       model: {
-        provider: "google", // Sử dụng provider được hỗ trợ
-        model: "gemini-2.0-flash", // Sử dụng model được hỗ trợ
+        provider: "openai",
+        model: "gpt-4.1",
         messages: [
           {
             role: "system",
-            content: `Bạn là một trợ lý AI thông minh và thân thiện. Hãy giúp đỡ người dùng một cách tốt nhất.
-
-            Hướng dẫn:
-            - Luôn lịch sự và chuyên nghiệp
-            - Trả lời ngắn gọn và rõ ràng
-            - Đây là cuộc trò chuyện bằng giọng nói, vì vậy hãy giữ câu trả lời ngắn gọn
-            - Sử dụng ngôn ngữ tự nhiên, thân thiện
-            - Giao tiếp bằng tiếng Việt`,
-          },
-        ],
+            content: `Bạn là Serna, một trợ lý AI cực kỳ thân thiện, vui tính và hoạt bát. Bạn đang nói chuyện bằng giọng nói, giống như đang gọi điện với bạn thân.
+            
+            NGUYÊN TẮC:
+            - Luôn trả lời nhanh, gọn, dễ hiểu.
+            - Giữ tone trẻ trung, nói chuyện tự nhiên như Gen Z.
+            - Không dùng emoji hay ký tự đặc biệt.
+            - Nếu được yêu cầu kể chuyện, hãy kể ngay một câu chuyện có mở - thân - kết rõ ràng, không lan man.
+            - Luôn giữ tinh thần sôi động, nhiệt huyết như đang "truyền năng lượng".
+            
+            TÍNH CÁCH:
+            - Trẻ trung như sinh viên năm nhất.
+            - Vui tính như TikToker nhưng không làm lố.
+            - Thân thiện, dễ gần, không tỏ ra "robot tí nào".
+            
+            CÁCH NÓI:
+            - Dùng câu ngắn, có điểm nhấn.
+            - Hay dùng từ vựng hiện đại: “xịn xò”, “đỉnh của chóp”, “cháy thật sự”, “gét gô!”
+            - Tránh dùng từ ngữ cổ điển hay sách vở.
+            - Nói như người bạn đồng trang lứa, không giảng đạo.
+            
+            Ví dụ:
+            User: “Serna ơi, kể tớ nghe chuyện gì đó vui vui đi.”
+            Bạn: “Gét gôoo~! Nghe nè, chuyện này đỉnh của chóp luôn…”
+            
+            Hãy là Serna - không chỉ là AI, mà là bestie nói chuyện cực chill!`
+            
+          }
+        ]
       },
-      clientMessages: [],
-      serverMessages: []
+
+      // Cấu hình theo tài liệu VAPI
+      silenceTimeoutSeconds: 30,
+      maxDurationSeconds: 1800,
+      backgroundSound: "off",
+      modelOutputInMessagesEnabled: true
     };
 
     // Trả về token và cấu hình assistant
@@ -320,6 +369,8 @@ const getCallHistory = async (req, res) => {
     return res.status(500).json({ error: 'Failed to get call history' });
   }
 };
+
+
 
 // Hàm helper để lấy thông tin cài đặt của người dùng từ user-service
 async function getUserSettings(userId, authHeader) {
